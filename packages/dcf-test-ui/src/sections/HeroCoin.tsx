@@ -36,7 +36,7 @@ export function HeroCoin({ connected }: HeroCoinProps) {
 
   return (
     <section className="section hero-section">
-      <div className="hero-tagline-top">YOUR CASINO. FIVE LINES OF CODE.</div>
+      <div className="hero-tagline-top">YOUR CASINO. 3 LINES OF CODE.</div>
 
       <div className="hero-coin-wrapper">
         <div

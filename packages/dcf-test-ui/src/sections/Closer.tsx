@@ -2,7 +2,7 @@ import React from 'react';
 
 export function Closer() {
   return (
-    <section className="section closer">
+    <section className="section dark closer">
       <span className="section-label">05</span>
       <h1 className="closer-title">OPEN YOUR DOORS</h1>
 
