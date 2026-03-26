@@ -234,21 +234,16 @@ export function FlipButton({
         )}
 
         <div
-          className={`w-full py-4 px-8 rounded-xl text-center ${
-            won
-              ? "bg-emerald-50 border border-emerald-200"
-              : "bg-gray-50 border border-gray-200"
-          }`}
-          style={
-            !won
-              ? { animation: `shake-${safeId} 0.4s ease-in-out` }
-              : undefined
-          }
+          className="w-full py-5 px-8 rounded-xl text-center"
+          style={{
+            backgroundColor: won ? '#ecfdf5' : `${accentColor}10`,
+            border: won ? '1px solid #a7f3d0' : `1px solid ${accentColor}30`,
+            ...(won ? {} : { animation: `shake-${safeId} 0.4s ease-in-out` }),
+          }}
         >
           <p
-            className={`text-lg font-semibold ${
-              won ? "text-emerald-600" : "text-gray-400"
-            }`}
+            className="text-xl font-bold"
+            style={{ color: won ? '#059669' : accentColor }}
           >
             {won ? winMessage : loseMessage}
           </p>
@@ -259,7 +254,8 @@ export function FlipButton({
               href={`https://solscan.io/tx/${tx}?cluster=devnet`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs opacity-50 hover:opacity-80 transition-opacity"
+              className="inline-block mt-2 text-xs hover:opacity-80 transition-opacity"
+              style={{ color: won ? '#059669' : accentColor, opacity: 0.6 }}
             >
               verified on-chain →
             </a>
