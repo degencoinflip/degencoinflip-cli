@@ -1,15 +1,24 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { DcfProvider, useDcf } from './provider';
-import { Connect } from './Connect';
-import { Canvas } from './Canvas';
+import { WalletButton } from './components/WalletButton';
+import { HeroCoin } from './sections/HeroCoin';
+import { CodeDemo } from './sections/CodeDemo';
+import { TerminalDemo } from './sections/TerminalDemo';
+import { Closer } from './sections/Closer';
+import './style.css';
 
-function Main() {
+function Showcase() {
   const { state } = useDcf();
 
   return (
     <>
-      {!state.sdk && <Connect />}
-      {state.sdk && <Canvas />}
+      <WalletButton />
+      <div className="showcase">
+        <HeroCoin connected={!!state.sdk} />
+        <CodeDemo />
+        <TerminalDemo />
+        <Closer />
+      </div>
       {state.error && <div className="error-banner">{state.error}</div>}
     </>
   );
@@ -18,7 +27,7 @@ function Main() {
 export function App() {
   return (
     <DcfProvider>
-      <Main />
+      <Showcase />
     </DcfProvider>
   );
 }
