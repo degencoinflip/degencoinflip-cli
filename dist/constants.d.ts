@@ -1,0 +1,24 @@
+import { PublicKey } from '@solana/web3.js';
+export declare const PROGRAM_ID: PublicKey;
+export declare const INITIALIZER_ID: PublicKey;
+export declare const COLD_HOUSE_ID: PublicKey;
+export declare const MEMO_PROGRAM_ID: PublicKey;
+export declare const DEFAULT_AUTHORITY = "modn84SAs1ccUAmxtmRY85yPz44qixgGrUwi276WYy1";
+export declare function getAuthorityId(): PublicKey;
+export declare const SEEDS: {
+    readonly HOUSE_TREASURY: "house_treasury";
+    readonly HOUSE_STATE: "house_state";
+    readonly DEGENERATE: "degenerate";
+    readonly REWARDS: "rewards";
+};
+export declare const FEE_PERCENTAGE = 0.035;
+export declare const FLAT_FEE_LAMPORTS = 10000;
+export declare const MIN_DEPOSIT_SOL = 0.001;
+export declare const MAX_DEPOSIT_SOL = 32;
+export declare const DEFAULT_PRIORITY_FEE_SOL = 0.0001;
+export declare const MAX_MARKET_LAMPORTS = 500000;
+export declare const PRIORITY_LEVEL = "VERYHIGH";
+export declare const IGNOREABLE_AMOUNT_SOL = 0.001;
+export declare const DEFAULT_API_URL = "https://api.degencoinflip.com/v2";
+export declare function getApiUrl(): string;
+export declare function getRpcUrl(): string;

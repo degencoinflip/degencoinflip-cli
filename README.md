@@ -20,7 +20,7 @@ $ dcf play H 1
 ## Install
 
 ```bash
-npm install -g degencoinflip-cli
+npm i -g degencoinflip/degencoinflip-cli
 ```
 
 ## Quick Start
@@ -28,7 +28,13 @@ npm install -g degencoinflip-cli
 ```bash
 solana-keygen new                  # 1. create a wallet
 # send SOL to the address shown    # 2. fund it
-dcf play H 1                       # 3. flip
+dcf play H 1                       # 3. flip (uses ~/.config/solana/id.json)
+```
+
+Using a different keypair? Set `DCF_KEYPAIR`:
+
+```bash
+export DCF_KEYPAIR=/path/to/your/keypair.json
 ```
 
 ## Commands
@@ -89,7 +95,6 @@ All via environment variables. No config files needed.
 |----------|-------------|---------|
 | `DCF_KEYPAIR` | Path to Solana keypair file | `~/.config/solana/id.json` |
 | `DCF_RPC_URL` | Solana RPC endpoint | mainnet |
-| `DCF_API_URL` | Backend API URL | `https://api.degencoinflip.com/v2` |
 | `DCF_PRIORITY_FEE` | Default priority fee in SOL | auto (Helius) |
 
 Or use flags:
@@ -108,6 +113,14 @@ dcf play H 1 -f json       # force JSON
 dcf play H 1 -f table      # table format
 dcf play H 1 -f compact    # single-line JSON
 dcf play H 1 -q            # quiet (minimal output)
+```
+
+## Development
+
+```bash
+git clone https://github.com/degencoinflip/degencoinflip-cli
+cd degencoinflip-cli && npm i && npm run build && npm link
+dcf --help
 ```
 
 ## Links
