@@ -14,4 +14,4 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
-      - run: npx tsc --noEmit
+      - run: npx tsc -b packages/sdk packages/cli --noEmit

@@ -1,0 +1,32 @@
+{
+  "name": "degencoinflip-cli",
+  "version": "0.1.0",
+  "description": "Degen Coin Flip CLI — one command to flip",
+  "license": "MIT",
+  "bin": {
+    "dcf": "./bin/dcf"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "bin/",
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@degencoinflip/sdk": "0.1.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "repository": "https://github.com/degencoinflip/degencoinflip-cli",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@degencoinflip/sdk",
+  "version": "0.1.0",
+  "description": "JavaScript SDK for Degen Coin Flip",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0",
+    "@solana/web3.js": "^1.95.0",
+    "bs58": "^5.0.0",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "keywords": [
+    "solana",
+    "sdk",
+    "coin-flip",
+    "defi",
+    "anchor",
+    "ai-agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/degencoinflip/degencoinflip-cli"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

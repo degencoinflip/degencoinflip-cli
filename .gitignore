@@ -1,3 +1,7 @@
 node_modules/
 .env
 CLAUDE.md
+.gstack/
+dist/
+.next/
+*.tsbuildinfo
