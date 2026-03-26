@@ -1,7 +1,7 @@
 import React from 'react';
 import { DcfProvider, useDcf } from './provider';
 import { Connect } from './Connect';
-import { Canvas } from './Canvas';
+import { Game } from './Game';
 
 function Main() {
   const { state } = useDcf();
@@ -9,7 +9,7 @@ function Main() {
   return (
     <>
       {!state.sdk && <Connect />}
-      {state.sdk && <Canvas />}
+      {state.sdk && <Game />}
       {state.error && <div className="error-banner">{state.error}</div>}
     </>
   );
