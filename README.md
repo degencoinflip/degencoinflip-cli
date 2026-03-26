@@ -28,7 +28,13 @@ npm i -g degencoinflip/degencoinflip-cli
 ```bash
 solana-keygen new                  # 1. create a wallet
 # send SOL to the address shown    # 2. fund it
-dcf play H 1                       # 3. flip
+dcf play H 1                       # 3. flip (uses ~/.config/solana/id.json)
+```
+
+Using a different keypair? Set `DCF_KEYPAIR`:
+
+```bash
+export DCF_KEYPAIR=/path/to/your/keypair.json
 ```
 
 ## Commands
