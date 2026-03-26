@@ -32,7 +32,8 @@ export const Errors = {
   ),
 
   invalidAmount: (amount: number, min: number, max: number) => new DcfError(
-    `invalid amount ${amount} SOL — must be between ${min} and ${max} SOL`,
+    `${amount} SOL is out of range`,
+    `min ${min} SOL · max ${max} SOL · up to 3 decimals`,
   ),
 
   depositFailed: (detail?: string) => new DcfError(

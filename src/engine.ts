@@ -132,7 +132,7 @@ export async function play(
   verboseLog(`Flip created: ${flipId}`);
 
   // 5. Deposit on-chain
-  log(`Flipping ${side === 'H' ? 'Heads' : 'Tails'} for ${amount} SOL (3.5% fee)...`);
+  log(`Flipping ${side === 'H' ? 'Heads' : 'Tails'} for ${amount} SOL...`);
   const depositTx = await depositSol(flipId, amount, side, priorityFee);
 
   // 6. Process flip (submit signature to backend)

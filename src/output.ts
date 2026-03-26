@@ -66,10 +66,8 @@ export interface PlayOutput {
 
 export function outputPlay(data: PlayOutput) {
   if (shouldUseHuman()) {
-    const profitStr = data.profit >= 0 ? `+${data.profit}` : `${data.profit}`;
     console.log('');
-    console.log(`  ${data.result}  ${profitStr} SOL  →  ${data.balance_after} SOL`);
-    console.log(`  ${data.explorer}`);
+    console.log(`  ${data.result}  →  ${data.balance_after} SOL`);
     console.log('');
   } else {
     outputJson(data as unknown as Record<string, unknown>);

@@ -18,6 +18,9 @@ Examples:
   dcf play T 0.5          Flip tails for 0.5 SOL
   dcf play H 1 --dry-run  Preview costs without playing
   dcf play                Resume a stuck flip
+
+Bets: 0.001–32 SOL (up to 3 decimal places). 3.5% fee per flip.
+Use --dry-run to see full cost breakdown.
 `)
     .action(async (sideArg: string | undefined, amountArg: string | undefined, opts: Record<string, unknown>) => {
       // No args = resume mode
@@ -36,6 +39,10 @@ Examples:
       // Validate amount
       const amount = parseFloat(amountArg ?? '');
       if (isNaN(amount) || amount < MIN_DEPOSIT_SOL || amount > MAX_DEPOSIT_SOL) {
+        throw Errors.invalidAmount(amount, MIN_DEPOSIT_SOL, MAX_DEPOSIT_SOL);
+      }
+      const decimals = (amountArg ?? '').split('.')[1];
+      if (decimals && decimals.length > 3) {
         throw Errors.invalidAmount(amount, MIN_DEPOSIT_SOL, MAX_DEPOSIT_SOL);
       }
 
