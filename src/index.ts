@@ -29,8 +29,6 @@ program
 Environment variables:
   DCF_KEYPAIR       Path to keypair file (default: ~/.config/solana/id.json)
   DCF_RPC_URL       Solana RPC endpoint
-  DCF_API_URL       Backend API URL
-  DCF_AUTHORITY     Authority pubkey override
   DCF_PRIORITY_FEE  Default priority fee in SOL
 
 Examples:

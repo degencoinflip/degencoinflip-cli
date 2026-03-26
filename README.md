@@ -89,7 +89,6 @@ All via environment variables. No config files needed.
 |----------|-------------|---------|
 | `DCF_KEYPAIR` | Path to Solana keypair file | `~/.config/solana/id.json` |
 | `DCF_RPC_URL` | Solana RPC endpoint | mainnet |
-| `DCF_API_URL` | Backend API URL | `https://api.degencoinflip.com/v2` |
 | `DCF_PRIORITY_FEE` | Default priority fee in SOL | auto (Helius) |
 
 Or use flags:
