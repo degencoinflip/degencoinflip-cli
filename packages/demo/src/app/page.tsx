@@ -9,9 +9,9 @@ import { PaymentSection } from "@/components/PaymentSection";
 import { SubscriptionSection } from "@/components/SubscriptionSection";
 import { CTASection } from "@/components/CTASection";
 
-const RPC_URL = 'https://elisabeth-cwuemc-fast-devnet.helius-rpc.com';
-const API_URL = 'https://dev-api.degencoinflip.com/v2';
-const DEVNET_AUTHORITY = 'dev28C6QphTgjBdzRu59uyatizY7SBJyxUNudsaxUZ8';
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
+const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+const DEVNET_AUTHORITY = process.env.NEXT_PUBLIC_AUTHORITY!;
 
 export default function Home() {
   const { publicKey, connected, signTransaction, signAllTransactions, signMessage } = useWallet();
@@ -24,7 +24,7 @@ export default function Home() {
           publicKey,
           signTransaction: signTransaction as any,
           signAllTransactions: signAllTransactions as any,
-          signMessage,
+          signMessage: signMessage as any,
         },
         rpcUrl: RPC_URL,
         apiUrl: API_URL,
@@ -40,9 +40,8 @@ export default function Home() {
       {/* Sticky wallet connect button */}
       <div className="fixed top-4 right-4 z-50">
         <WalletMultiButton style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
+          background: '#111',
+          border: '1px solid #333',
           borderRadius: '12px',
           fontWeight: 500,
           fontSize: '14px',

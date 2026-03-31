@@ -9,7 +9,7 @@ import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-unsafe-burner'
 import '@solana/wallet-adapter-react-ui/styles.css';
 
 export const Providers: FC<{ children: ReactNode }> = ({ children }) => {
-  const endpoint = 'https://elisabeth-cwuemc-fast-devnet.helius-rpc.com';
+  const endpoint = process.env.NEXT_PUBLIC_RPC_URL!;
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),

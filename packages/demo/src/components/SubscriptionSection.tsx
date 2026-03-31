@@ -97,7 +97,7 @@ export function SubscriptionSection({ dcf }: SubscriptionSectionProps) {
         </div>
 
         {/* Code snippet */}
-        <CodeSnippet code={code} />
+        <CodeSnippet code={code} dark />
       </div>
     </section>
   );
