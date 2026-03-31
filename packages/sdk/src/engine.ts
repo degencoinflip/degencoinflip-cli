@@ -6,9 +6,9 @@ import { depositSol } from './deposit';
 import { buildDepositTransaction } from './deposit';
 import { claimReward } from './claim';
 import { buildClaimTransaction } from './claim';
-import { createCoinFlip, processCoinFlipWithMemo, getCoinFlip } from './api';
+import { createCoinFlip, processCoinFlipWithMemo, getCoinFlip, playFlip } from './api';
 import { findRewardsAccount } from './pda';
-import { FEE_PERCENTAGE, FLAT_FEE_LAMPORTS, DEFAULT_PRIORITY_FEE_SOL, getApiUrl } from './constants';
+import { FEE_PERCENTAGE, FLAT_FEE_LAMPORTS, DEFAULT_PRIORITY_FEE_SOL } from './constants';
 import { Errors } from './errors';
 import { log, verboseLog } from './logger';
 import type { FlipResult, DryRunResult, ResumeResult, PlayOptions } from './types';
@@ -157,27 +157,13 @@ async function playOnePopup(
   verboseLog(`Deposit tx: ${depositSig}`);
 
   // 7. Call /flips/play (no JWT — deposit signature is proof)
-  const apiUrl = getApiUrl();
-  verboseLog(`POST ${apiUrl}/flips/play`);
-  const res = await fetch(`${apiUrl}/flips/play`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      wallet_id: walletId,
-      side,
-      amount,
-      deposit_signature: depositSig,
-      flip_id: flipId,
-    }),
+  const flipResult = await playFlip({
+    wallet_id: walletId,
+    side,
+    amount,
+    deposit_signature: depositSig,
+    flip_id: flipId,
   });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw Errors.apiFailed('flips/play', `${res.status} ${text.slice(0, 200)}`);
-  }
-
-  const result = await res.json();
-  const flipResult = result?.payload ?? result;
   const won = flipResult?.won === true;
   const payout = won ? amount * 2 : 0;
 
@@ -223,21 +209,18 @@ export async function play(
     return playOnePopup(side, amount, opts);
   }
 
-  // Existing multi-step flow for keypair (0 popups) or adapters without signAll
+  // Keypair flow: deposit on-chain → POST /flips/play → claim if won
   const { noClaim = false, priorityFee, timeout = 120_000 } = opts;
+  const walletId = getWallet().publicKey.toBase58();
 
-  // 1. Auth
-  const token = await ensureAuth(getAuthTarget());
-  verboseLog('Authenticated');
-
-  // 2. Check balance
+  // 1. Check balance
   const balanceBefore = await getBalance();
   const cost = totalCost(amount, priorityFee ?? DEFAULT_PRIORITY_FEE_SOL);
   if (balanceBefore < cost) {
     throw Errors.insufficientBalance(cost, balanceBefore);
   }
 
-  // 3. Resolve stuck state
+  // 2. Resolve stuck state
   const stuck = await detectState();
   if (stuck.state === 'PENDING_REWARD') {
     log(`Auto-claiming pending reward of ${stuck.rewardSol.toFixed(4)} SOL...`);
@@ -253,25 +236,30 @@ export async function play(
     }
   }
 
-  // 4. Create flip (backend)
-  verboseLog('Creating flip...');
-  const flip = await createCoinFlip({ side, amount }, token);
-  const flipId: string = flip?.id ?? '';
-  verboseLog(`Flip created: ${flipId}`);
+  // 3. Generate flip ID client-side
+  const flipId = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : require('crypto').randomUUID();
 
-  // 5. Deposit on-chain
+  // 4. Deposit on-chain
   log(`Flipping ${side === 'H' ? 'Heads' : 'Tails'} for ${amount} SOL...`);
   const depositTx = await depositSol(flipId, amount, side, priorityFee);
 
-  // 6. Process flip (submit signature to backend)
-  verboseLog('Submitting deposit signature to backend...');
-  const result = await processCoinFlipWithMemo(flipId, depositTx, token);
+  // 5. Call /flips/play (no JWT — deposit signature is proof)
+  verboseLog('Submitting to /flips/play...');
+  const result = await playFlip({
+    wallet_id: walletId,
+    side,
+    amount,
+    deposit_signature: depositTx,
+    flip_id: flipId,
+  });
 
-  // 7. Determine outcome
+  // 6. Determine outcome
   const won = result?.won === true;
   const payout = won ? amount * 2 : 0;
 
-  // 8. Claim if won
+  // 7. Claim if won
   let claimTx: string | undefined;
   if (won && !noClaim) {
     verboseLog('You won! Claiming reward...');
@@ -279,7 +267,7 @@ export async function play(
     claimTx = await claimReward(flipId, amount, side, priorityFee);
   }
 
-  // 9. Final balance
+  // 8. Final balance
   const balanceAfter = await getBalance();
   const fee = round4(amount * FEE_PERCENTAGE + FLAT_FEE_LAMPORTS / LAMPORTS_PER_SOL);
   const profit = won ? amount : -amount;

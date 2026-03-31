@@ -108,3 +108,31 @@ export async function processCoinFlipWithMemo(id: string, signature: string, tok
   const json = await res.json();
   return json?.data?.payload ?? json?.payload ?? json;
 }
+
+// --- Combined play endpoint (no JWT required) ---
+
+export async function playFlip(params: {
+  wallet_id: string;
+  side: string;
+  amount: number;
+  deposit_signature: string;
+  flip_id: string;
+  affiliate_id?: string;
+}): Promise<any> {
+  const url = `${getApiUrl()}/flips/play`;
+  verboseLog(`POST ${url}`);
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw Errors.apiFailed('flips/play', `${res.status} ${text.slice(0, 200)}`);
+  }
+
+  const json = await res.json();
+  return json?.payload ?? json?.data?.payload ?? json;
+}
