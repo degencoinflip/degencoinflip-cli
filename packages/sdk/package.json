@@ -34,7 +34,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/degencoinflip/degencoinflip-cli"
+    "url": "https://github.com/degencoinflip/degencoinflip"
   },
   "engines": {
     "node": ">=18"

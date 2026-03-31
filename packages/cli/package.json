@@ -27,7 +27,14 @@
     "tsx": "^4.21.0",
     "typescript": "^5.6.0"
   },
-  "repository": "https://github.com/degencoinflip/degencoinflip-cli",
+  "repository": "https://github.com/degencoinflip/degencoinflip",
+  "keywords": [
+    "solana",
+    "cli",
+    "coin-flip",
+    "defi",
+    "ai-agents"
+  ],
   "engines": {
     "node": ">=18"
   }
