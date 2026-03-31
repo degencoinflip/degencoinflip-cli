@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test": "tsx --test test/*.test.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.0"
   },
   "repository": "https://github.com/degencoinflip/degencoinflip-cli",
