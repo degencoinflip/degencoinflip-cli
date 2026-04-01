@@ -1,7 +1,7 @@
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getBalance, getWallet, getWalletAdapter, getConnection } from './anchor';
 import { ensureAuth } from './auth';
-import { detectState } from './resume';
+import { detectState, findOrphanedDeposit } from './resume';
 import { depositSol } from './deposit';
 import { buildDepositTransaction } from './deposit';
 import { claimReward } from './claim';
@@ -68,10 +68,11 @@ export async function resume(): Promise<ResumeResult | null> {
   }
 
   if (state.state === 'PENDING_FLIP') {
-    log(`Pending flip detected (${state.depositSol.toFixed(4)} SOL in escrow). Waiting for resolution...`);
-    const token = await ensureAuth(getAuthTarget());
+    log(`Pending flip detected (${state.depositSol.toFixed(4)} SOL in escrow). Attempting recovery...`);
 
+    // Try JWT-based lookup first (works when user has authenticated before)
     try {
+      const token = await ensureAuth(getAuthTarget());
       const flip = await getCoinFlip(token);
       if (flip?.status === 'FINALIZED' || flip?.status === 'COMPLETED') {
         const won = flip.won === true;
@@ -88,7 +89,19 @@ export async function resume(): Promise<ResumeResult | null> {
         return { resumed: true, previous_state: 'PENDING_FLIP', result: 'LOSS', payout: 0 };
       }
     } catch {
-      // Backend may not have the flip
+      // Auth failed or backend has no record — try orphan recovery
+    }
+
+    // No backend record — try orphan recovery via /play
+    const recovered = await recoverOrphanedFlip({ balanceBefore: 0, noClaim: false, timeout: 30_000 });
+    if (recovered) {
+      return {
+        resumed: true,
+        previous_state: 'PENDING_FLIP',
+        result: recovered.result === 'WIN' ? 'WIN' : 'LOSS',
+        payout: recovered.payout,
+        claim_tx: recovered.claim_tx,
+      };
     }
 
     return { resumed: true, previous_state: 'PENDING_FLIP', result: 'UNKNOWN', payout: 0 };
@@ -127,13 +140,15 @@ async function playOnePopup(
     log(`Auto-claiming pending reward of ${stuck.rewardSol.toFixed(4)} SOL...`);
     await claimReward();
   } else if (stuck.state === 'PENDING_FLIP') {
-    log(`Pending flip in escrow — waiting for resolution...`);
-    await sleep(3000);
-    const state2 = await detectState();
-    if (state2.state === 'PENDING_REWARD') {
+    log(`Pending flip in escrow — attempting recovery...`);
+    const recovered = await recoverOrphanedFlip({ balanceBefore, noClaim, priorityFee, timeout, affiliateId: opts.affiliateId });
+    if (recovered) return recovered;
+    // No orphan found — poll with backoff for consensus resolution
+    const resolved = await pollForResolution(15_000);
+    if (resolved === true) {
       await claimReward();
-    } else if (state2.state !== 'IDLE') {
-      throw Errors.depositFailed('Previous flip still pending. Try again in a moment or run: dcf play');
+    } else if (resolved === undefined) {
+      throw Errors.depositFailed('Previous flip still pending and deposit tx not found in recent history');
     }
   }
 
@@ -231,13 +246,15 @@ export async function play(
     log(`Auto-claiming pending reward of ${stuck.rewardSol.toFixed(4)} SOL...`);
     await claimReward();
   } else if (stuck.state === 'PENDING_FLIP') {
-    log(`Pending flip in escrow — waiting for resolution...`);
-    await sleep(3000);
-    const state2 = await detectState();
-    if (state2.state === 'PENDING_REWARD') {
+    log(`Pending flip in escrow — attempting recovery...`);
+    const recovered = await recoverOrphanedFlip({ balanceBefore, noClaim, priorityFee, timeout, affiliateId: opts.affiliateId });
+    if (recovered) return recovered;
+    // No orphan found — poll with backoff for consensus resolution
+    const resolved = await pollForResolution(15_000);
+    if (resolved === true) {
       await claimReward();
-    } else if (state2.state !== 'IDLE') {
-      throw Errors.depositFailed('Previous flip still pending. Try again in a moment or run: dcf play');
+    } else if (resolved === undefined) {
+      throw Errors.depositFailed('Previous flip still pending and deposit tx not found in recent history');
     }
   }
 
@@ -291,6 +308,94 @@ export async function play(
     claim_tx: claimTx,
     flip_id: flipId,
     explorer: solscanTx(claimTx ?? depositTx),
+  };
+}
+
+/**
+ * Poll on-chain state with exponential backoff until the flip resolves.
+ * Returns true (won), false (lost), or undefined (timed out).
+ */
+async function pollForResolution(timeoutMs: number): Promise<boolean | undefined> {
+  const start = Date.now();
+  let delay = 2000;
+  while (Date.now() - start < timeoutMs) {
+    await sleep(delay);
+    const state = await detectState();
+    if (state.state === 'PENDING_REWARD') return true;
+    if (state.state === 'IDLE') return false;
+    // Still PENDING_FLIP — back off (cap at 10s)
+    delay = Math.min(delay * 1.5, 10_000);
+  }
+  return undefined;
+}
+
+/**
+ * Recover an orphaned on-chain deposit by re-submitting to /play.
+ * Handles the case where the backend already has the flip (#4: "already used").
+ * Returns the FlipResult so the caller can return it directly (#1).
+ */
+async function recoverOrphanedFlip(opts: {
+  balanceBefore: number;
+  noClaim: boolean;
+  priorityFee?: number;
+  timeout: number;
+  affiliateId?: string;
+}): Promise<FlipResult | null> {
+  const orphaned = await findOrphanedDeposit();
+  if (!orphaned) return null;
+
+  const walletId = getWallet().publicKey.toBase58();
+  log(`Found orphaned deposit ${orphaned.signature.slice(0, 12)}... — re-submitting to /play`);
+
+  let won: boolean | undefined;
+
+  try {
+    const result = await playFlip({
+      walletId,
+      side: orphaned.side,
+      amount: orphaned.amount,
+      depositSignature: orphaned.signature,
+      flipId: orphaned.flipId,
+      affiliateId: opts.affiliateId,
+    });
+    won = result?.won === true;
+  } catch (err: any) {
+    // Backend already processed this flip (original /play call succeeded
+    // but SDK never got the response). Poll on-chain for the outcome.
+    const msg = err.message ?? '';
+    if (msg.includes('already used') || msg.includes('already being processed')) {
+      verboseLog('Backend already has this flip — polling on-chain for resolution...');
+      won = await pollForResolution(opts.timeout);
+    } else {
+      throw err;
+    }
+  }
+
+  if (won === undefined) return null; // couldn't determine outcome
+
+  const payout = won ? orphaned.amount * 2 : 0;
+  let claimTx: string | undefined;
+  if (won && !opts.noClaim) {
+    await waitForReward(opts.timeout);
+    claimTx = await claimReward(orphaned.flipId, orphaned.amount, orphaned.side, opts.priorityFee);
+  }
+
+  const balanceAfter = await getBalance();
+  const fee = round4(orphaned.amount * FEE_PERCENTAGE + FLAT_FEE_LAMPORTS / LAMPORTS_PER_SOL);
+
+  return {
+    result: won ? 'WIN' : 'LOSS',
+    side: orphaned.side,
+    bet: orphaned.amount,
+    fee,
+    payout,
+    profit: won ? orphaned.amount : -orphaned.amount,
+    balance_before: round4(opts.balanceBefore),
+    balance_after: round4(balanceAfter),
+    tx: orphaned.signature,
+    claim_tx: claimTx,
+    flip_id: orphaned.flipId,
+    explorer: solscanTx(claimTx ?? orphaned.signature),
   };
 }
 
