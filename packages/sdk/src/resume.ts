@@ -48,7 +48,9 @@ export async function detectState(): Promise<GameState> {
 }
 
 /**
- * Scan recent wallet transactions for an orphaned participate() deposit.
+ * Scan the escrow PDA's recent transactions for an orphaned participate() deposit.
+ * Queries the degenerate PDA directly (not the wallet) so we only see
+ * flip-related txs — no noise from token transfers, SOL sends, etc.
  * Verifies the actual on-chain balance change matches the memo amount
  * (memo alone can be spoofed).
  */
@@ -57,7 +59,8 @@ export async function findOrphanedDeposit(): Promise<OrphanedDeposit | null> {
   const player = getWallet().publicKey;
   const [degeneratePda] = await findDegenerateAccount(player);
 
-  const sigs = await connection.getSignaturesForAddress(player, { limit: 10 });
+  // Query the escrow PDA — only participate() and consensus() txs show up here
+  const sigs = await connection.getSignaturesForAddress(degeneratePda, { limit: 10 });
 
   for (const sigInfo of sigs) {
     if (!sigInfo.memo) continue;
@@ -82,6 +85,11 @@ export async function findOrphanedDeposit(): Promise<OrphanedDeposit | null> {
     if (pdaIndex === -1) continue;
 
     const balanceChangeLamports = tx.meta.postBalances[pdaIndex] - tx.meta.preBalances[pdaIndex];
+
+    // Only consider deposits (positive balance change into escrow)
+    // Consensus txs have negative balance change (funds leaving escrow)
+    if (balanceChangeLamports <= 0) continue;
+
     const balanceChangeSol = balanceChangeLamports / LAMPORTS_PER_SOL;
 
     // Cross-verify: actual balance change must match memo amount
